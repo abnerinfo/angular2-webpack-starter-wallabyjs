@@ -1,7 +1,7 @@
 /**
  * @author: @AngularClass
  */
-
+var path = require('path');
 const helpers = require('./helpers');
 
 /**
@@ -13,6 +13,10 @@ const DefinePlugin = require('webpack/lib/DefinePlugin');
 /**
  * Webpack Constants
  */
+
+
+var isCoverage = process.env.npm_lifecycle_event && process.env.npm_lifecycle_event.startsWith('coverage');
+
 const ENV = process.env.ENV = process.env.NODE_ENV = 'test';
 
 /**
@@ -21,6 +25,14 @@ const ENV = process.env.ENV = process.env.NODE_ENV = 'test';
  * See: http://webpack.github.io/docs/configuration.html#cli
  */
 module.exports = {
+
+  ts: {
+    compilerOptions: {
+      sourceMap: false,
+      sourceRoot: path.join(__dirname, '../src'),
+      inlineSourceMap: true
+    }
+  },
 
   /**
    * Source map for Karma from the help of karma-sourcemap-loader &  karma-webpack
@@ -82,14 +94,15 @@ module.exports = {
        *
        * See: https://github.com/webpack/source-map-loader
        */
-      {
-        test: /\.js$/,
-        loader: 'source-map-loader',
-        exclude: [
-        // these packages have problems with their sourcemaps
-        helpers.root('node_modules/rxjs'),
-        helpers.root('node_modules/@angular')
-      ]}
+      // {
+      //   test: /\.js$/,
+      //   loader: 'source-map-loader',
+      //   exclude: [
+      //     // these packages have problems with their sourcemaps
+      //     helpers.root('node_modules/rxjs'),
+      //     helpers.root('node_modules/@angular')
+      //   ]
+      // }
 
     ],
 
@@ -103,24 +116,28 @@ module.exports = {
      */
     loaders: [
 
+      
+
       /**
        * Typescript loader support for .ts and Angular 2 async routes via .async.ts
        *
        * See: https://github.com/s-panferov/awesome-typescript-loader
        */
+      
+
       {
         test: /\.ts$/,
-        loader: 'awesome-typescript-loader',
+        loader: 'ts',
         query: {
-          compilerOptions: {
-
-            // Remove TypeScript helpers to be injected
-            // below by DefinePlugin
-            removeComments: true
-
-          }
+          'ignoreDiagnostics': [
+            2403, // 2403 -> Subsequent variable declarations
+            2300, // 2300 -> Duplicate identifier
+            2374, // 2374 -> Duplicate number index signature
+            2375, // 2375 -> Duplicate string index signature
+            2502  // 2502 -> Referenced directly or indirectly
+          ]
         },
-        exclude: [/\.e2e\.ts$/]
+        exclude: [ /\.(e2e)\.ts$/ ]
       },
 
       /**
@@ -153,7 +170,7 @@ module.exports = {
      *
      * See: http://webpack.github.io/docs/configuration.html#module-preloaders-module-postloaders
      */
-    postLoaders: [
+    postLoaders:  isCoverage ? [
 
       /**
        * Instruments JS files with Istanbul for subsequent code coverage reporting.
@@ -162,15 +179,13 @@ module.exports = {
        * See: https://github.com/deepsweet/istanbul-instrumenter-loader
        */
       {
-        test: /\.(js|ts)$/, loader: 'istanbul-instrumenter-loader',
-        include: helpers.root('src'),
-        exclude: [
-          /\.(e2e|spec)\.ts$/,
-          /node_modules/
-        ]
-      }
+          test: /\.ts$/,
+          include: helpers.root('src'),
+          loader: 'istanbul-instrumenter-loader',
+          exclude: [/\.spec\.ts$/, /\.e2e\.ts$/, /node_modules/]
+          }
 
-    ]
+    ] : []
   },
 
   /**
@@ -199,8 +214,6 @@ module.exports = {
         'HMR': false,
       }
     }),
-
-
   ],
 
   /**
@@ -212,8 +225,11 @@ module.exports = {
   tslint: {
     emitErrors: false,
     failOnHint: false,
-    resourcePath: 'src'
+    resourcePath: 'src',
+    exclude: ['node_modules', 'dist']
   },
+
+  
 
   /**
    * Include polyfills or mocks for various node stuff

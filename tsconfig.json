@@ -9,9 +9,7 @@
     "noEmitHelpers": true,
     "lib": ["es6", "dom"],
     "strictNullChecks": false,
-    "baseUrl": "./src",
-    "paths": [
-    ],
+    "paths": [],
     "types": [
       "core-js",
       "hammerjs",
